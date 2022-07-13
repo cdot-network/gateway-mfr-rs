@@ -7,6 +7,9 @@ use std::{collections::HashMap, str::FromStr};
 mod ecc;
 mod file;
 
+#[cfg(feature = "tee")]
+mod tee;
+
 /// A security device to work with. Security devices come in all forms. This
 /// abstracts them into one with a well defined interface for doing what this
 /// tool needs to do with them.
@@ -14,6 +17,8 @@ mod file;
 pub enum Device {
     Ecc(ecc::Device),
     File(file::Device),
+    #[cfg(feature = "tee")]
+    Tee(tee::Device),
 }
 
 pub struct DeviceArgs(HashMap<String, String>);
@@ -26,9 +31,13 @@ pub struct DeviceArgs(HashMap<String, String>);
 pub enum Config {
     Ecc(ecc::Config),
     File(file::Config),
+    #[cfg(feature = "tee")]
+    Tee(tee::Config),
 }
 
 pub mod test {
+    #[cfg(feature = "tee")]
+    use crate::device::tee;
     use crate::{
         device::{ecc, file},
         Result,
@@ -40,6 +49,8 @@ pub mod test {
     pub enum Test {
         Ecc(ecc::Test),
         File(file::Test),
+        #[cfg(feature = "tee")]
+        Tee(tee::Test),
     }
 
     #[derive(Debug, Serialize, Clone)]
@@ -83,6 +94,8 @@ pub mod test {
             match self {
                 Self::Ecc(test) => test.run(),
                 Self::File(test) => test.run(),
+                #[cfg(feature = "tee")]
+                Self::Tee(test) => test.run(),
             }
         }
     }
@@ -92,6 +105,8 @@ pub mod test {
             match self {
                 Self::Ecc(test) => test.fmt(f),
                 Self::File(test) => test.fmt(f),
+                #[cfg(feature = "tee")]
+                Self::Tee(test) => test.fmt(f),
             }
         }
     }
@@ -128,6 +143,8 @@ impl FromStr for Device {
         match url.scheme_str() {
             Some("ecc") => Ok(Self::Ecc(ecc::Device::from_url(&url)?)),
             Some("file") | None => Ok(Self::File(file::Device::from_url(&url)?)),
+            #[cfg(feature = "tee")]
+            Some("tz") => Ok(Self::Tee(tee::Device::from_url(&url)?)),
             _ => Err(anyhow!("invalid device url \"{}\"", s)),
         }
     }
@@ -163,6 +180,8 @@ impl Device {
         let info = match self {
             Self::Ecc(device) => Info::Ecc(device.get_info()?),
             Self::File(device) => Info::File(device.get_info()?),
+            #[cfg(feature = "tee")]
+            Self::Tee(device) => Info::Tee(device.get_info()?),
         };
         Ok(info)
     }
@@ -171,6 +190,8 @@ impl Device {
         let config = match self {
             Self::Ecc(device) => Config::Ecc(device.get_config()?),
             Self::File(device) => Config::File(device.get_config()?),
+            #[cfg(feature = "tee")]
+            Self::Tee(device) => Config::Tee(device.get_config()?),
         };
         Ok(config)
     }
@@ -179,6 +200,8 @@ impl Device {
         let keypair = match self {
             Self::Ecc(device) => device.get_keypair(create)?,
             Self::File(device) => device.get_keypair(create)?,
+            #[cfg(feature = "tee")]
+            Self::Tee(device) => device.get_keypair(create)?,
         };
         Ok(keypair)
     }
@@ -187,6 +210,8 @@ impl Device {
         let keypair = match self {
             Self::Ecc(device) => device.provision()?,
             Self::File(device) => device.provision()?,
+            #[cfg(feature = "tee")]
+            Self::Tee(device) => device.provision()?,
         };
         Ok(keypair)
     }
@@ -203,6 +228,12 @@ impl Device {
                 .into_iter()
                 .map(test::Test::File)
                 .collect(),
+            #[cfg(feature = "tee")]
+            Self::Tee(device) => device
+                .get_tests()
+                .into_iter()
+                .map(test::Test::Tee)
+                .collect(),
         }
     }
 }
@@ -213,4 +244,6 @@ impl Device {
 pub enum Info {
     Ecc(ecc::Info),
     File(file::Info),
+    #[cfg(feature = "tee")]
+    Tee(tee::Info),
 }
