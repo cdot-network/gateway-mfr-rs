@@ -77,7 +77,7 @@ fn compact_key_in_slot(slot: u8) -> Result<Keypair> {
 }
 
 fn generate_compact_key_in_slot(slot: u8) -> Result<Keypair> {
-    let mut try_count = 5;
+    let mut try_count = 10;
     loop {
         gen_ecc_keypair(slot)?;
 
