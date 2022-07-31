@@ -21,7 +21,7 @@ serde_urlencoded = "*"
 http = "0"
 bytes = "*"
 angry-purple-tiger = "0"
-helium-crypto = { git = "ssh://git@github.com/iotpi-helium/helium-crypto-rs.git", branch = "trustzone", features = ["ecc608"]}
+helium-crypto = { git = "https://github.com/iotpi-argon/helium-crypto-rs.git", branch = "trustzone", features = ["ecc608"]}
 
 [features]
 default = [ "ecc608" ]
